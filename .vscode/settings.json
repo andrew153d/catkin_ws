@@ -5,5 +5,8 @@
   "cmake.sourceDirectory": "${workspaceFolder}/src/beginner_tutorials",
   "python.analysis.extraPaths": [
     "/opt/ros/noetic/lib/python3/dist-packages"
-  ]
+  ],
+  "files.associations": {
+    "ostream": "cpp"
+  }
 }

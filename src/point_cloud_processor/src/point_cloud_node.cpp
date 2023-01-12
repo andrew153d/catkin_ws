@@ -1,12 +1,14 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
-
+//#include "include/point_cloud_node/cloud.h"
 void cloud_callback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg)
 {
+    using namespace std;
     std::cout << "got message" << std::endl;
+    std::cout << cloud_msg->height << ' ' << cloud_msg->width << std::endl;
+    cout << "hello" << endl;
   // Process the point cloud data here
   // cloud_msg is a sensor_msgs/PointCloud2 message
-  // You can access the point cloud data using the 'data' field of the message
 }
 
 int main(int argc, char** argv)

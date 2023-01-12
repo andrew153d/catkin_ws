@@ -96,16 +96,16 @@ find_package(catkin REQUIRED COMPONENTS
 ## catkin specific configuration ##
 ###################################
 ## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
+## Declare things to be passed to dependent projects1
 ## INCLUDE_DIRS: uncomment this if your package contains header files
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES point_cloud_processor
- CATKIN_DEPENDS roscpp sensor_msgs
- DEPENDS system_lib
+  LIBRARIES point_cloud_processor cloud
+  CATKIN_DEPENDS roscpp sensor_msgs
+  DEPENDS system_lib
 )
 
 ###########
@@ -120,9 +120,10 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/point_cloud_processor.cpp
-# )
+ add_library(${PROJECT_NAME}
+   src/${PROJECT_NAME}/point_cloud_processor.cpp
+   include/point_cloud_processor/cloud.h
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

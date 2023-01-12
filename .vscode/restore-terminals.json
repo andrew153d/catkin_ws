@@ -17,7 +17,7 @@
             "name": "rosbag",
             "color":"blue",
             "commands": [
-              "cd ~/catkin_ws/src",
+              
               "rosbag play --clock ~/Downloads/zed_point_cloud.bag"
             ],
             "shouldRunCommands": false
@@ -41,7 +41,8 @@
           {
             "name": "run node",
             "commands": [
-              "cd ~/catkin_ws/devel/lib/point_cloud_processor"
+              "cd ~/catkin_ws/devel/lib/point_cloud_processor",
+              "./point_cloud_node"
             ],
             "shouldRunCommands": false
           }
