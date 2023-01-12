@@ -102,10 +102,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES point_cloud_processor cloud
-  CATKIN_DEPENDS roscpp sensor_msgs
-  DEPENDS system_lib
+  #INCLUDE_DIRS include
+  #LIBRARIES point_cloud_processor cloud
+  #CATKIN_DEPENDS roscpp sensor_msgs
+  #DEPENDS system_lib
 )
 
 ###########
@@ -115,15 +115,14 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
- add_library(${PROJECT_NAME}
-   src/${PROJECT_NAME}/point_cloud_processor.cpp
-   include/point_cloud_processor/cloud.h
-)
+# add_library(${PROJECT_NAME}
+#   src/${PROJECT_NAME}/src/point_cloud_node.cpp
+#   include/point_cloud_processor/cloud.h
+#)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
