@@ -18,7 +18,7 @@
             "color":"blue",
             "commands": [
               
-              "rosbag play --clock ~/Downloads/zed_point_cloud.bag"
+              "rosbag play --loop ~/Downloads/zed_point_cloud.bag"
             ],
             "shouldRunCommands": false
           }
