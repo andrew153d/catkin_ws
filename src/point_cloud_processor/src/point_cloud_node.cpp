@@ -11,12 +11,35 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ros/ros.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/segmentation/region_growing_rgb.h>
+#include <nav_msgs/OccupancyGrid.h>
+#include <pcl/filters/conditional_removal.h>
+#include <bits/stdc++.h>
+#include <vector>
+
 
 ros::Publisher pub;
-ros::Publisher grid_cells_pub;
+ros::Publisher cost_map_pub;
+
+typedef struct{
+  float x, y, z;
+  int points;
+} point_block;
+
+
 
 void cloud_callback(const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
+  using namespace std;
   // Convert the ROS message to PCL point cloud
   pcl::PointCloud<pcl::PointXYZRGBA> cloud;
   pcl::fromROSMsg(*msg, cloud);
@@ -32,8 +55,32 @@ void cloud_callback(const sensor_msgs::PointCloud2::ConstPtr &msg)
   pass.setFilterLimits(-10, 0);
   // pass.setFilterLimitsNegative (true);
   pass.filter(cloud);
-  uint32_t blue = (static_cast<uint32_t>(0) << 16) | (static_cast<uint32_t>(0) << 8) | static_cast<uint32_t>(255);
-  for (auto point : cloud.points)
+
+//pass.setInputCloud(cloud.makeShared());
+  //pass.setFilterFieldName("x");
+  //pass.setFilterLimits(0, 3);
+  // pass.setFilterLimitsNegative (true);
+  //pass.filter(cloud);
+  pcl::ConditionalRemoval<pcl::PointXYZRGBA> color_filter;
+
+ pcl::PackedRGBComparison<pcl::PointXYZRGBA>::Ptr red_condition(new pcl::PackedRGBComparison<pcl::PointXYZRGBA>("r", pcl::ComparisonOps::GT, 150));
+ pcl::PackedRGBComparison<pcl::PointXYZRGBA>::Ptr green_condition(new pcl::PackedRGBComparison<pcl::PointXYZRGBA>("g", pcl::ComparisonOps::GT, 150));
+ pcl::PackedRGBComparison<pcl::PointXYZRGBA>::Ptr blue_condition(new pcl::PackedRGBComparison<pcl::PointXYZRGBA>("b", pcl::ComparisonOps::GT, 150));
+
+ pcl::ConditionAnd<pcl::PointXYZRGBA>::Ptr color_cond (new pcl::ConditionAnd<pcl::PointXYZRGBA> ());
+ color_cond->addComparison (red_condition);
+ color_cond->addComparison (green_condition);
+ color_cond->addComparison (blue_condition);
+ 
+ // Build the filter
+ color_filter.setInputCloud(cloud.makeShared());
+ color_filter.setCondition (color_cond);
+ color_filter.filter(cloud);
+
+
+
+
+  /*for (auto point : cloud.points)
   {
     // std::cout << "hi" << (point.r + point.g + point.b) / 3 << std::endl;
     if ((point.r + point.g + point.b) / 3 < 250)
@@ -41,7 +88,7 @@ void cloud_callback(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
       point.rgb = blue;
     }
-  }
+  }*/
 
   // cloud.points.erase(std::remove_if(cloud.points.begin(), cloud.points.end(), [](const pcl::PointXYZRGBA &point)
   //                                  { return (point.r + point.g + point.b) / 3 < 100; }),
@@ -53,28 +100,40 @@ void cloud_callback(const sensor_msgs::PointCloud2::ConstPtr &msg)
   filtered_msg.header = msg->header;
   pub.publish(filtered_msg);
 
-  nav_msgs::GridCells grid_cells;
-  grid_cells.header.frame_id = "base_link";
-  grid_cells.cell_width = 0.1;
-  grid_cells.cell_height = 0.1;
-  std::vector<geometry_msgs::Point> points;
-  
-  int width = 10;
-  int height = 10;
-  float resolution = 0.2;
-
-
-  for (int i = 0; i < width*height; i++)
-  {
-    geometry_msgs::Point point;
-    point.x = (i%width)*resolution;
-    point.y = int(i/width)*resolution;
-    point.z = 0;
-    points.push_back(point);
+  nav_msgs::OccupancyGrid map;
+  map.header.stamp = ros::Time::now();
+  map.header.frame_id = "base_link";
+  map.info.map_load_time = ros::Time::now();
+  map.info.resolution = 0.1; // set your desired resolution
+  map.info.width = 50; // set your desired width
+  map.info.height = 50; // set your desired height
+  map.info.origin.position.x = 0; // set your desired origin position
+  map.info.origin.position.y = -2.5; // set your desired origin position
+  map.info.origin.position.z = 0; // set your desired origin position
+  map.info.origin.orientation.w = 1.0;
+  map.data.resize(map.info.width * map.info.height);
+  for(int i = 0; i<map.data.size(); i++){
+    map.data[i] = -1;
   }
 
-  grid_cells.cells = points;
-  grid_cells_pub.publish(grid_cells);
+
+  for(int i = 0; i<50; i++){
+    map.data[i] = i*2;
+  }
+
+  for (auto point : cloud.points){
+    int px = (int)(point.x/0.1);
+    int py = ((int)((point.y+2.5)/0.1));
+    int i = px + 50*py;
+    //printf("point %d, %d \n", px, py);
+    if(i<50*50 and i>0){
+      map.data[i]++;      
+      if(map.data[i] >100){
+        map.data[i] = 100;
+      } 
+    }
+  }
+  cost_map_pub.publish(map);
 }
 
 int main(int argc, char **argv)
@@ -83,8 +142,8 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
 
   pub = nh.advertise<sensor_msgs::PointCloud2>("output", 1);
-  grid_cells_pub = nh.advertise<nav_msgs::GridCells>("grid_cells", 10);
-  ros::Subscriber cloud_sub = nh.subscribe("/zed2/zed_node/point_clo1", 1, cloud_callback);
+  cost_map_pub = nh.advertise<nav_msgs::OccupancyGrid>("cost_map", 1);
+  ros::Subscriber cloud_sub = nh.subscribe("/zed2/zed_node/point_cloud/cloud_registered", 1, cloud_callback);
 
   ros::spin();
   return 0;
